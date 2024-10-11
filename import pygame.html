@@ -1,0 +1,133 @@
+import pygame
+import random
+import os
+
+# 초기화
+pygame.init()
+
+# 색상 정의
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+
+# 게임 창 설정
+width = 800
+height = 600
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Snake Game")
+
+# 배경 이미지 로드
+# 주의: 이 부분은 실제 이미지 파일이 있는 경로로 수정해야 합니다.
+background_img = pygame.image.load(os.path.join("background.jpg"))
+background_img = pygame.transform.scale(background_img, (width, height))
+
+# 뱀과 먹이 초기화
+snake_pos = [100, 50]
+snake_body = [[100, 50], [90, 50], [80, 50]]
+food_pos = [random.randrange(1, (width//10)) * 10, random.randrange(1, (height//10)) * 10]
+food_spawn = True
+
+# 방향 초기화
+direction = 'RIGHT'
+change_to = direction
+
+# 초기 점수
+score = 0
+
+# 게임 속도 제어
+clock = pygame.time.Clock()
+
+# 게임 오버 함수
+def game_over():
+    font = pygame.font.SysFont('times new roman', 90)
+    game_over_surface = font.render('YOU DIED', True, RED)
+    game_over_rect = game_over_surface.get_rect()
+    game_over_rect.midtop = (width/2, height/4)
+    screen.blit(background_img, (0, 0))  # 배경 이미지 그리기
+    screen.blit(game_over_surface, game_over_rect)
+    show_score(0, RED, 'times', 20)
+    pygame.display.flip()
+    pygame.time.wait(3000)
+    pygame.quit()
+    quit()
+
+# 점수 표시 함수
+def show_score(choice, color, font, size):
+    score_font = pygame.font.SysFont(font, size)
+    score_surface = score_font.render('Score : ' + str(score), True, color)
+    score_rect = score_surface.get_rect()
+    if choice == 1:
+        score_rect.midtop = (width/10, 15)
+    else:
+        score_rect.midtop = (width/2, height/1.25)
+    screen.blit(score_surface, score_rect)
+
+# 메인 게임 루프
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                change_to = 'UP'
+            if event.key == pygame.K_DOWN:
+                change_to = 'DOWN'
+            if event.key == pygame.K_LEFT:
+                change_to = 'LEFT'
+            if event.key == pygame.K_RIGHT:
+                change_to = 'RIGHT'
+
+    # 방향 검증
+    if change_to == 'UP' and direction != 'DOWN':
+        direction = 'UP'
+    if change_to == 'DOWN' and direction != 'UP':
+        direction = 'DOWN'
+    if change_to == 'LEFT' and direction != 'RIGHT':
+        direction = 'LEFT'
+    if change_to == 'RIGHT' and direction != 'LEFT':
+        direction = 'RIGHT'
+
+    # 뱀 이동
+    if direction == 'UP':
+        snake_pos[1] -= 10
+    if direction == 'DOWN':
+        snake_pos[1] += 10
+    if direction == 'LEFT':
+        snake_pos[0] -= 10
+    if direction == 'RIGHT':
+        snake_pos[0] += 10
+
+    # 뱀 몸통 메커니즘
+    snake_body.insert(0, list(snake_pos))
+    if snake_pos[0] == food_pos[0] and snake_pos[1] == food_pos[1]:
+        score += 1
+        food_spawn = False
+    else:
+        snake_body.pop()
+
+    # 음식 스폰
+    if not food_spawn:
+        food_pos = [random.randrange(1, (width//10)) * 10, random.randrange(1, (height//10)) * 10]
+    food_spawn = True
+
+    # 그래픽
+    screen.blit(background_img, (0, 0))  # 배경 이미지 그리기
+    for pos in snake_body:
+        pygame.draw.rect(screen, GREEN, pygame.Rect(pos[0], pos[1], 10, 10))
+
+    pygame.draw.rect(screen, WHITE, pygame.Rect(food_pos[0], food_pos[1], 10, 10))
+
+    # 게임 오버 조건
+    if snake_pos[0] < 0 or snake_pos[0] > width-10:
+        game_over()
+    if snake_pos[1] < 0 or snake_pos[1] > height-10:
+        game_over()
+    for block in snake_body[1:]:
+        if snake_pos[0] == block[0] and snake_pos[1] == block[1]:
+            game_over()
+
+    show_score(1, WHITE, 'consolas', 20)
+    pygame.display.update()
+    clock.tick(20)
